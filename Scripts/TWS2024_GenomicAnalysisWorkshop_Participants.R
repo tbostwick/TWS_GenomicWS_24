@@ -130,7 +130,17 @@ calckinship()
 #genetic diversity
 calcdiversity() 
 
+#calculate genetic distance
+calcdistance()
+
+#pop structure
+findstructure(Kmax=6)
+#pick high k initially
+#cross-entropy criterion: helps select correct k -- when the line dips first (ex 5)
+
 ##### Part 2: Identify loci under selection #####
+
+## go to presenter script for part 2 ##
 
 # https://https://academic.oup.com/mbe/article/37/7/2153/5826356
 #source("https://https://github.com/bcm-uga/pcadapt/blob/master/README.md")
