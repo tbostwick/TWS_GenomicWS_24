@@ -1,5 +1,7 @@
 ##### TWS 2023 Genomic Analysis Workshop #####
 
+### go to participant code for notes on part 1 ###
+
 ##Set working directory
 ##Use the path to where you downloaded the data ("batch_1.vcf")
 setwd("~/Desktop/MEWG/TWS R Workshop 2023/")
@@ -106,20 +108,30 @@ calckinship()
 #genetic diversity
 calcdiversity() 
 
-###### Now let's identify loci under selection ###############
+## here for part 2 notes ##
+
+##################################################################
+###### Part 2: identify loci under selection ###############
 
 # https://https://academic.oup.com/mbe/article/37/7/2153/5826356
 #source("https://https://github.com/bcm-uga/pcadapt/blob/master/README.md")
 
+library(pcadapt)
+library(vcfR)
+library(qvalue)
+
 ## Load prairie dog dataset ##
 #this vcf has been filtered using vcftools
-pdog.vcf<-"./raw.dplm.recode.vcf"
+pdog.vcf<-"./raw.dplm.recode.vcf" ## raw data
 p.dog <- read.pcadapt("./raw.dplm.recode.vcf", type ="vcf")
-pdog2=read.vcfR(pdog.vcf)
+pdog2=read.vcfR(pdog.vcf) #creating genlight object
 pdog2=vcfR2genlight(pdog2)
+pdog2
 pop(pdog2)<- sapply(strsplit(indNames(pdog2),"_"), function(pdog2){pdog2[1]})
 levels(pop(pdog2))<-c(paste0("CC",1:3),paste0("HE",1:4))
+### same as in part one -- creating pop ID names
 #No variant got discarded.
+
 #Summary:
 
 #- input file:				./raw.dplm.recode.vcf
@@ -132,27 +144,51 @@ levels(pop(pdog2))<-c(paste0("CC",1:3),paste0("HE",1:4))
 #233 columns detected.
 
 #Choosing the number K of Principal Components
-pdog.pca<-pcadapt(input = p.dog, K=20)
+pdog.pca<-pcadapt(input = p.dog, K=20) ## input is raw vca file, K -- set very high initially to double check
+# comes up with p values for loci for expected results
 
 #Scree plot - up to K=20
 plot(pdog.pca, option = "screeplot", plt.pkg = "ggplot")
+#potential K values (PC axes) -- how are they explainig the variance
+#look for sharp decline, bend, and then another decline "knee"
+#at first split -- a lot of variance explained
+#K = 4 or 5, look before the plateau -- no more sharp decline
+
 #Focus in on K=10
 plot(pdog.pca, option="screeplot", K=10, plt.pkg = "ggplot")
+## zoom in a little bit to get finer resolution
+#as ggplot can manipulate parts
+#one way to look out how many PC axis are explaining data
 
 #PCA
 #include popIDs
-
-
+## look at the pc axis as another double checking for k
+#PC12 is looking at axis 1 and 2
+#scores is comparing axes 1 and 2
+#looking for structure (groupings) -- looking to see if there is information useful to you
+#pop=pdgo2$pop -- colors the populations with a specific color, so can identify the points
 PC12=plot(pdog.pca, option = "scores", i = 1, j = 2, plt.pkg = "ggplot", pop=pdog2$pop)
+# seeing seperations on both 1 and 2 axis; structure yes
 PC23=plot(pdog.pca, option = "scores", i = 2, j = 3, plt.pkg = "ggplot", pop=pdog2$pop)
+#structure yes
 PC34=plot(pdog.pca, option = "scores", i =3, j = 4, plt.pkg = "ggplot", pop=pdog2$pop)
+#structure yes
 PC45=plot(pdog.pca, option = "scores", i = 4, j = 5, plt.pkg = "ggplot", pop=pdog2$pop)
+#structure yes
 PC56=plot(pdog.pca, option = "scores", i = 5, j = 6, plt.pkg = "ggplot", pop=pdog2$pop)
+# structure: there is seperation on 5, but not much seperation on 6
+# if go further -- just becomes a blob with no distinct groupings
+#scree plot to help inform which axis to plot and explore further
+#6th axis not informative -- so K=5
+#these just give you quick look -- later when doing structure will do more iterations to get error on K
 
 #calculate variance on each axis
-EV <- (pdog.pca$singular.values^2)
-EV2 <-EV*100
+EV <- (pdog.pca$singular.values^2) #column created -- singular values squared to get variance
+EV2 <-EV*100 #multiplied by 100 to get variance
 EV2
+#1 explains 47%, no sig decreases after 5 -- plateaus; so k=5
+#doesn't hurt to go past -- may be some biological explanation for other groupings/k's
+
 
 #Using ggplot to plot your PCA
 PC12+theme_classic()+theme(plot.title = element_blank()) +
@@ -161,63 +197,80 @@ PC12+theme_classic()+theme(plot.title = element_blank()) +
   scale_x_continuous(limits = c(-0.2, 0.2), 
                      breaks = c(-0.2,-0.1,0,0.1,0.2))+
   scale_y_continuous(limits = c(-0.2, 0.2), breaks = c(-0.2,-0.1,0,0.1,0.2))
-ggsave(".PC12.pdf", dpi=600)
+ggsave(".PC12.pdf", dpi=600) #how to save the plot, and dpi for quality
 
-#Set your K value
+#Set your K value; setting the number of axis
 pdog_k5 <- pcadapt(p.dog, K = 5)
 summary(pdog_k5)
 
-#Length Class  Mode   
+#Length Class  Mode   --- althouhg information that PCadapt makes for you
 #scores           1165  -none- numeric
 #singular.values     5  -none- numeric
 #loadings        14770  -none- numeric
 #zscores         14770  -none- numeric
 #af               2954  -none- numeric
-#maf              2954  -none- numeric
+#maf              2954  -none- numeric #minor alleles
 #chi2.stat        2954  -none- numeric
 #stat             2954  -none- numeric
 #gif                 1  -none- numeric
 #pvalues          2954  -none- numeric
 #pass             2940  -none- numeric
 
-#Basic Manhattan Plot
+#Basic Manhattan Plot  --- code later for nicer manhattan plot
 plot(pdog_k5, option="manhattan")
+## looking at -log of p-value; looking for outlier loci
+# loci that are high above the rest are outlier -- can set lines by genome scan to delineate anything above is a potential outlier loci
+# most loci are not significant; but this doesn't tell you much (not what or where); quick look
 
-#Q-Q Plots
+#Q-Q Plots #looking at how data is distributed
 plot(pdog_k5, option="qqplot")
 
 #Histograms of the test statistic and of the p-values
 hist(pdog_k5$pvalues, xlab = "p-value",main = NULL, breaks = 50, col = "#2471A3")
+#plotting p-values and looking at significance
+#are majority of samples non-sig (.5 >)
+#samples with very low p-values are candidates for adapative loci
 
 plot(pdog_k5, option = "stat.distribution")
 
-## q-values
+### outlier tests ###
+
+## q-values  -- start looking for outlier loci
+## for later analyses -- can exclude outlier to have a neutral and adaptive set of data for analyses
+## do mult methods when doing outlier tests; several listed in samaba package
+    ## can create a ven diagram to see where there is overlap; don't rely on just one method
+  ##combined a better idea of what might be true outliers
 
 #Choosing a cutoff for outlier detection
 #To provide a list of outliers and choose a cutoff for outlier detection, there are several methods 
 #that are listed below from the less conservative one to the more conservative one.
+  #q-value - least conservative
+  #bonferroni - most
 
 #For a given α (real valued number between 0 and 1), SNPs with q-values less than α will be considered as 
 #outliers with an expected false discovery rate bounded by α. The false discovery rate is defined as the percentage 
 #of false discoveries among the list of candidate SNPs. Here is an example of how to provide a list of candidate SNPs 
 #for the geno3pops data, for an expected false discovery rate lower than 10%:
-loci=pdog2$loc.names
-qval <- qvalue(pdog_k5$pvalues)$qvalues
-alpha10 <- 0.1
-outliers_qvalue10 <- which(qval < alpha10)
-length(outliers_qvalue10)
-alpha5 <- 0.05
+loci=pdog2$loc.names #calling locus names in genlight file
+qval <- qvalue(pdog_k5$pvalues)$qvalues #transformed p-values, making q-values column
+alpha10 <- 0.1 #setting false discovery rate -- threshold; test at diff levels
+outliers_qvalue10 <- which(qval < alpha10) #q values set at false discovery level of 10; looking for snps that have q value less than alpha
+length(outliers_qvalue10) #How many snps detected?
+# 597 found
+alpha5 <- 0.05 #5% more stat sig, but check at other levels
 outliers_qvalue5.ints <- which(qval < alpha5)
 length(outliers_qvalue5.ints)
-outliers_qvalue5 <- as.character(loci)[outliers_qvalue5.ints]
+# 556 found;lost 50ish -- becoming more strict; can go low as want
+outliers_qvalue5 <- as.character(loci)[outliers_qvalue5.ints] #binding loci name to the info on the snps -- SNP name tied to ones it picked up with q values
 outliers_qvalue5
-#write.csv(outliers_qvalue5, "./827_adaptive_snps_q.csv")
+#write.csv(outliers_qvalue5, "./827_adaptive_snps_q.csv") -- how you would write the csv for this file
 
-#Benjamini-Hochberg Procedure
-padj_BH <- p.adjust(pdog_k5$pvalues,method="BH")
+#Benjamini-Hochberg Procedure -- another way to detect -- a bit more strict
+#code does the same thing, just different method
+padj_BH <- p.adjust(pdog_k5$pvalues,method="BH") #setting method
 alpha10 <- 0.1
 outliers_BH10 <- which(padj_BH < alpha10)
-length(outliers_BH10)
+length(outliers_BH10) #same number as q values results
 #outliers_BH10
 
 alpha5 <- 0.05
@@ -233,11 +286,11 @@ length(outliers_BH1.ints)
 outliers_BH1 <- as.character(loci)[outliers_BH1.ints]
 outliers_BH1
 
-#Bonferroni correction
+#Bonferroni correction -- accounting for smaller sample sizes; most conservative approach
 padj_BC <- p.adjust(pdog_k5$pvalues,method="bonferroni")
 alpha10 <- 0.1
 outliers_BH10 <- which(padj_BC < alpha10)
-length(outliers_BH10)
+length(outliers_BH10) #341 resulting snps -- 200 less than other methods
 #outliers_BH10
 
 alpha5 <- 0.05
@@ -251,7 +304,11 @@ snps_pvalues <- cbind(loci, pdog_k5$pvalues)
 snps_pvalues_no_na <- na.omit(snps_pvalues)
 write.table(snps_pvalues, "All_Pvalues.txt", sep="\t", quote=FALSE)
 
-#Population Structure
+
+##########
+#### Population Structure ####
+#looking at an individ package from samaba to do reiterations and get error estimates
+# run mult methods to make sure not getting wildly diff results
 
 #Convert vcf file to lfmm and geno file type
 pdog_lfmm<- vcf2lfmm('./raw.dplm.recode.vcf', output.file = "./pdog.lfmm", force = TRUE)
