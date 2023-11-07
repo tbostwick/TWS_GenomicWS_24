@@ -1,0 +1,62 @@
+This file contains a template for your methods section. Remove the lines which are not applicable to your study.
+Full citations can be found in the 'SambaR_Rpackages.bib' file.
+
+DATA PREPARATION
+PGD-Spider (Lischer and Excoffier, 2012), plink  (Purcell et al., 2007) or vcftools (Danecek et al., 2011) was used to convert the SNP data into PED and MAP format.
+The vcftools (Danecek et al., 2011) flags --depth and --site-depth were used to calculate read depth per individual and per SNP.
+The mean sequence depth per individual ranged from NA to NA reads per SNP, with an average of NA reads per SNP per individual.
+Individuals with less than 10, 1, 0.5 and 0.25 percent missing data had a minimum cover of respectively NA, NA, NA, and NA reads (see figure 'missingdatapersample').
+The mean sequence depth per individual per SNP ranged from NA to NA reads per SNP, with a mean and median of respectively NA and NA reads (see figure 'Locusdepth').
+Binary files (BED, RAW and BIM) were generated from PED and MAP files using PLINK (Purcell et al., 2007, i.e. using the flags --make-bed, --recode A, --chr-set 95, and allow-extra-chr).
+DATA MANAGEMENT
+SNP data management and analyses were performed in R-4.3.2 (R Core Team, 2019) using wrapper functions of the R package SambaR (github page: https://github.com/mennodejong1986/SambaR ).
+The data was imported into R and stored in a genlight object using the function 'read.PLINK' of the R package adegenet-2.1.10 (Jombart, 2008; Jombart and Ahmed, 2011).
+The data was filtered using the function 'filterdata' of the R package SambaR, with indmiss=0.25, snpmiss=0.1, min_mac=2, dohefilter=TRUE and min_spacing=500.
+After filtering 233 out of 237 individuals (13-58 per population) were retained (see figures 'Missingdata_perpop', 'Retainedinds_perpop' and 'Discardedinds_perpop').
+After filtering 3157 out of 3549 SNPs were retained (see figure 'Filterclasses'). This filtered dataset was used for selection analyses.
+Thinning reduced the dataset further to 2915 SNPs (see figure 'Filterclasses'). This filtered and thinned dataset was used for structure analyses.
+Note that SambaR's 'filterdata' function filters individuals based on their proportion of missing datapoints considering all SNPs.
+Subsequently, the function filters SNPs based on their proportion of missing datapoints considering retained individuals only.
+The opposite order - i.e. first filtering of SNPs, then filtering of individuals - could return different estimates of missing data and, as a result, different numbers of retained SNPs and individuals.
+The GC-content of the retained dataset equalled 0 (see figure 'Minoralleles') and the 'transversion vs transition'-ratio equalled 0 (see figure 'Transitions_vs_transversions.filtered').
+Linkage disequilibrium (LD) estimates were calculated using PLINK (-genome --r2 --ld-window-kb 1000000 --ld-window -r2 0).
+PLOTTING
+Geographical maps were generated with the function 'getMap' of the R package rworldmap-1.3.8 (South, 2011). Piecharts were added using the function 'add.pie' of the R package mapplots-1.5.2 (Gerritsen, 2018).
+STRUCTURE ANALYSES
+Correspondence analyses (CA) were performed using the function 'dudi.coa' of the R package ade4-1.7.22 (Dray and Dufour, 2007; Bougeard and Dray, 2018). Data was imputed per SNP/individual by calculating genotype probabilities from population specific minor allele frequencies'.
+Principal coordinate analyses (PCoA) were performed using the function 'pcoa' of the R package ape-5.7.1 (Paradis and Schliep, 2018) on distance matrices containing 3 different measures of genetic distance:
+- Nei's genetic distance, calculated with the function 'stamppNeisD' of the R package StAMPP-1.6.3 (Pembleton et al., 2013).
+- Hamming's genetic distance, calculated with the function 'bitwise.dist' of the R package poppr-2.9.4 (Kamvar et al., 2014).
+- pi (pairwise sequence dissimilarity), calculated with the function 'calcpi' of the R package SambaR.
+Principal component analyses (PCA) were performed using the function 'snpgdsPCA' of the R package  (Zheng et al., 2012).
+DAPC analyses were performed using the function 'dapc' of the R package adegenet-2.1.10 (Jombart, 2008; Jombart and Ahmed, 2011), both with and without prior population assignment. The number of PCs was set to ... (based on the a-score), the number of clusters was set to ..., and the number of discriminant functions to 3.
+Multi dimensional scaling (MDS) was performed using the function 'cmdscale' (metric MDS) of the R package stats-4.3.2 (R Core Team, 2019) and the function 'isoMDS' (non-metric MDS) of the R package MASS-7.3.60 (Venables and Ripley, 2002), on a Euclidean distance matrix generated with the function 'dist' of the R package stats-4.3.2 (R Core Team, 2019).
+Neighbourhood joining (NJ) clustering was performed using the function 'NJ' of the R package  (Schliep, 2011), using as input a Hamming’s genetic distance matrix between individuals, calculated with the function 'bitwise.dist' of the R package poppr-2.9.4 (Kamvar et al. 2014).
+Bayesian population assignment (BPA) probabilities were calculated and plotted using the functions 'assign2pop' and 'plotassign2pop' of the R package SambaR.
+The optimal number of clusters (K) was determined using the elbow method on cross-entropy scores generated by the 'snmf' function, with the assumption that the startpoint of a plateau represents the optimal K.
+GENETIC DISTANCE ANALYSES
+Nei's genetic distance was calculated with the function 'stamppNeisD' of the R package StAMPP-1.6.3 (Pembleton et al., 2013).
+Genome wide 'Weir & Cockerham 1984' Fst estimates (for all pairwise population comparisons) were calculated with the function 'stamppFst' of the R package StAMPP-1.6.3 (Pembleton et al., 2013).
+Locus specific Fst estimates (according to Wright (1943), Nei (1977), and Cockerham and Weir (1987) (for all pairwise population comparisons) were calculated with the functions 'runWrightFst', 'locusNeiFst', and 'locusWCFst' of the R package SambaR.
+KINSHIP ANALYSES
+Inbreeding was estimated using the inbreeding coefficient (F), which is the probability that the two alleles at any locus of a diploid individual are identical by descent (IBD)(Kardos et al., 2015).
+Relatedness between sample pairs was estimated with the kinship coefficient (Wapels et al. 2018) and the KING-robust score (Manichaikul et al. 2010). Sample pairs with scores close to 0.5 were considered related.
+In addition, relatedness between sample pairs was calculated using the softwares PLINK and/or GCTA and plotted using SambaR functions.
+GENETIC DIVERSITY ANALYSES
+HWE, (2D) folded site frequency spectra (SFS), Tajima's D and genome wide heterozygosity analyses were executed using the function 'calcdiversity' of the R package SambaR.
+More specifically, population specific SFS vectors were generated with the function 'getfoldedsfs' of the R package SambaR, which bins SNPs in classes based on their number of copies of the minor allele, and which subsequently calculated the size of each bin (i.e. number of SNPs within each bin).
+Genome wide He (genomeHe) was calculated for each sample using the formula: genome He = (He_seg * N_seg)/N_total, in which:
+N_seg: 	the number of sites segregating within the population to which the investigated individual belonged.
+He_seg: 	the proportion of heterozygous sites within the investigated individual for those segregating sites.
+N_total:	the combined length of all sequenced sites (polymorphic as well as monomorphic) which passed the filter settings.
+DEMOGRAPHIC ANALYSES
+Admixture coefficients were calculated with the functions 'snmf' and 'Q' of the R package LEA-3.12.2 (Frichot and Francois, 2014). Alpha was set to 10, tolerance to 0.00001, and number of iterations to 200.
+Ancestry coefficients were calculated with the software Admixture-1.3 (Alexander et al., 2009) and plotted using the 'plotstructure'-function of SambaR.
+SELECTION ANALYSES
+Selection analyses were performed using the R packages fsthet-1.0.1 (Flanagan and Jones, 2018),  (Whitlock and Lotterhos, 2015), pcadapt-4.3.5 (Luu et al., 2016) and the 'gwdsfisher' function of SambaR.
+Association analyses (GWAS) were performed using the function 'gwdsfisher' of the R package SambaR.
+Sliding window Fst analyses were performed using the function 'rollapply' of the R package zoo-1.8.12.
+DEMOGRAPHY ANALYSES
+Historical Ne estimates were inferred from the folded SFS vectors with the software stairway_plot_v2 (Liu and Fu, 2015). The mutation rate was set to ... and, the generation time to ...
+Migration rates were estimated using BayesAss3-SNPs (Mussmann et al., 2019). The number of iterations was set to 1000000, burn-in to 100000 and delta values to 0.1. Output matrices were converted into gene flow plots with the function 'plotmigration' of the R package SambaR, with use of the R package circlize-0.4.15.
+

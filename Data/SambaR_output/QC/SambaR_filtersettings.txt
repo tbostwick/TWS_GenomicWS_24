@@ -1,0 +1,6 @@
+date/time	2023-11-07 13:08:31.920569
+indmiss	0.25
+snpmiss	0.1
+minimum_minor_allele_count	2
+dohefilter	TRUE
+min_spacing	500

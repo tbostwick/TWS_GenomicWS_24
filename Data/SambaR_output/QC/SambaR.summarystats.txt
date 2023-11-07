@@ -1,0 +1,9 @@
+Before filtering	After filtering	After thinning
+Number of individuals	237	233	233
+Number of SNPs	3549	3157	2915
+Percentage of SNPs with maf >= 0.05	99.55	99.49	99.55
+Mean spacing between SNPs	145104.05	155289.66	184598.82
+Median spacing between SNPs	43207	56745	86498
+Mean proportion of missing data per individual	0.05	0.04	0.04
+GC content	0	0	0
+Transition vs transversion ratio	0	0	0
