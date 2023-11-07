@@ -1,8 +1,0 @@
-pop	n_retained
-CC1	40
-CC2	58
-CC3	21
-HE1	44
-HE2	24
-HE3	13
-HE4	33
