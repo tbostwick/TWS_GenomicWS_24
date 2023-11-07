@@ -2,7 +2,7 @@
 
 ##Set working directory
 ##Use the path to where you downloaded the data ("batch_1.vcf")
-setwd("C:/Users/tbost/OneDrive/Documents/TAMUK/Genetics WS/TWS/Data")
+setwd("C:/Users/tbost/OneDrive/Documents/TAMUK/SPEC Lab Materials/GitHub/TWS_GenomicWS_24/Data")
 
 ## Load Packages ##
 install.packages("devtools")
@@ -38,6 +38,11 @@ library(ggplot2)
 library(pcadapt)
 library(qvalue)
 
+#### Part 1: SambaR ####
+### --- in samabaR; creates many, many figures; those figures not uploaded --- ###
+### those figures can be tailored by using arguments found in the handbook ###
+### this section of the code goes over basic samba codes that gives you overview of your SNP data
+## not necessarily analyses, but good for prelim
 
 ##Load SambaR 
 source("https://github.com/mennodejong1986/SambaR/raw/master/SAMBAR_v1.09.txt")
@@ -50,17 +55,22 @@ getpackages()
 # There is a ton of useful information there!
 
 ## Load prairie dog dataset ##
-vcf <- read.vcfR("batch_1.vcf")
+vcf <- read.vcfR("batch_1.vcf") 
+#Prelim Filters:1 SNP per contig (keep loci independent), 
+#loci represented in at least 80% of indiv, 
+#removed loci w/ het over .7 (filter to account for assembly errors)\
+#Minor allele frequency (MAF) removed if less than 5%
+#done in Stacks pipeline v1.48
+#vcf file is the output from the pipeline -- not the raw
 vcf
 
 # ***** Object of Class vcfR *****
-#   237 samples
+#   237 samples; check to make sure this is the expected number
 # 1826 CHROMs
 # 3,549 variants
 # Object size: 8.2 Mb
 # 0 percent missing data
 # *****        *****         *****
-####test ####
 
 vcf@meta
 
@@ -68,9 +78,9 @@ vcf@fix
 
 vcf@gt
 
-pdogGen <- vcfR2genlight(vcf)
+pdogGen <- vcfR2genlight(vcf) #making vcf file into genlight file
 pdogGen
-#' /// GENLIGHT OBJECT /////////
+#' /// GENLIGHT OBJECT ///////// : genlight is a type of input file, some R packages want other types such as Genid and genpop
 #'   
 #'   // 237 genotypes,  3,549 binary SNPs, size: 1.1 Mb
 #' 39695 (4.72 %) missing data
@@ -85,27 +95,42 @@ pdogGen
 #' @position: integer storing positions of the SNPs
 #' @other: a list containing: elements without names 
 
+indNames(pdogGen) #shows population/name ID's
+
 #include popIDs
 pop(pdogGen)<- sapply(strsplit(indNames(pdogGen),"_"), function(pdogGen){pdogGen[1]})
+#strsplit seperates ID's by _ and then function keeps the first half to create the population ID
 levels(pop(pdogGen))<-c(paste0("CC",1:3),paste0("HE",1:4))
+#levels: categorical, code above is renaming the pop ID's to be more workable
+#make sure that when renaming they are in the right order
+levels(pop(pdogGen))
 
-table(pop(pdogGen))
-# CC1 CC2 CC3 HE1 HE2 HE3 HE4 
+table(pop(pdogGen)) #count of how many individ in each pop
+# CC1 CC2 CC3 HE1 HE2 HE3 HE4 : the result of renaming the pop Id's 
 # 40  59  21  44  24  15  34 
 
 #Let's start with a brief look at our data using the sambaR package
+#samabaR -- look at assumptions made by package, this package good for surface level analyses; a collection of Rpackages for genomics
+#samabaR -- a wrapper for multiple packages but can use each package individually; automatically generates figures for quick peeks
+#default versus alternate arguments and filtering options
+#make multiple datasets with different filtering to answer different questions
 genlight2sambar("pdogGen",do_confirm=TRUE)
 
-#filter data
+#filter data : can only work on one project at a time in sambaR
 filterdata(indmiss=0.25,snpmiss=0.1,min_mac=2,dohefilter=TRUE,snpdepthfilter=TRUE, min_spacing=500, nchroms=NULL, silent=TRUE,maxprop_hefilter = 0.06)
-warnings()
+#filter conditions: indmiss (level of missing data per indivd), min_mac (min minor allele count), dohefilter:hetero filter, min_spacing(minimum space between snps)
+#in sambaR_outputs file folder: automatically generating figures 
+
 #calculate kinship
 calckinship()
+#outputs at sambaR Kinship
+#inbreeding coefficents: outliers colored in, normal open circle; each dot an individual
+#heterozygosities lower for SNPs than for microsatts -- on average half, so healthy pop average .1-.3 range; will always have lower levels
 
 #genetic diversity
 calcdiversity() 
 
-###### Now let's identify loci under selection ###############
+##### Part 2: Identify loci under selection #####
 
 # https://https://academic.oup.com/mbe/article/37/7/2153/5826356
 #source("https://https://github.com/bcm-uga/pcadapt/blob/master/README.md")
